@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Version 0alpha
+# Version 0.01alpha
 # June 23, 2026
 # must run: python -m pip install sympy
 # No AI used here
@@ -212,6 +212,11 @@ class Matrix:
     def setPlaceVecCol(self,ident: int, col: Vec):
         for r in range(0, self.rows):
             self.values[r][ident] = col.vals[r]
+        return
+
+    def setPlaceVecRow(self,ident: int, col: Vec):
+        for r in range(0, self.cols):
+            self.values[ident][r] = col.vals[r]
         return
 
     def placeVecCol(self,ident: int, col: Vec) -> "Matrix":
@@ -457,9 +462,14 @@ class Matrix:
         return total
 
 def pointBetween(a: Vec, b: Vec, lamb: float) -> Vec:
-    aprime = a.scale(lamb)
-    bprime = b.scale(1.0 - lamb)
-    return aprime.add(bprime)
+    dest=Vec(a.dimen)
+    if lamb >= 0.0 and lamb <= 1.0:
+        aprime = a.scale(lamb)
+        bprime = b.scale(1.0 - lamb)
+        dest = aprime.add(bprime)
+        return dest
+    dest.undef = True
+    return dest
 
 
 #I don't know how usefull it is but it's something
@@ -583,6 +593,17 @@ def checkAffine(aug: Matrix) -> bool:
     coeffs = aug.findx()
     return sumsToOne(coeffs.vals)
 
+def convertColVecs(*vecs) -> Matrix:
+    dest=Matrix(len(vecs[0].vals),len(vecs))
+    for i in range(0,dest.cols):
+        dest.setPlaceVecCol(i, vecs[i])
+    return dest
+
+def convertRowVecs(*vecs) -> Matrix:
+    dest=Matrix(len(vecs),len(vecs[0].vals))
+    for i in range(0,dest.rows):
+        dest.setPlaceVecRow(i, vecs[i])
+    return dest
 
 if __name__=="__main__":
     print("Beggining tests / examples... ")
@@ -716,3 +737,26 @@ if __name__=="__main__":
 
     U.niceRowReduce().print() # should see identity again since U is invertible
 
+    print()
+
+    L=pointBetween(V[0],V[1],0.5)
+    print("exactly halfway between V[0] and V[1]")
+    L.print()
+
+    print()
+
+    cv = convertColVecs(*V)
+    cv.print()
+
+    print()
+
+    rv = convertRowVecs(*V)
+    rv.print()
+
+    # defaultInit controls how the matrix is initialized if you want all 0s
+    # You must have False as your third argument. it's diagonal will be 1's otherwise
+    z = Matrix(2,2,False)
+    z.print()
+
+    o = Matrix(2,2,True)
+    o.print()
