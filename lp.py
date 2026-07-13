@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Version 0.02alpha
+# Version 0.03alpha
 # June 23, 2026
 # must run: python -m pip install sympy
 # No AI used here
@@ -27,12 +27,20 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
-
+DEFAULT_ERROR_MARGIN=0.00000000001
 
 from math import sqrt
 import sympy
 import re
 import copy
+
+
+
+def withinError(subj: float, prist:float, delta:float) -> float:
+    dist = abs(subj - prist)
+    if dist >= 0.0 and dist <= delta:
+        return prist
+    return subj
 
 class Vec:
     def __init__(self, dim: int,undefined:bool=False ):
@@ -84,11 +92,11 @@ class Vec:
         return nw
 
     def isPerpen(self, rhs: "Vec") -> bool:
-        return self.dotp(rhs) == 0.0
+        return withinError(self.dotp(rhs),0.0,DEFAULT_ERROR_MARGIN) == 0.0
 
     def isUnitVec(self):
         diff = 1.0 - self.length()
-        return (diff >= 0.0) and (diff < 0.000000001)
+        return (diff >= 0.0) and (diff < DEFAULT_ERROR_MARGIN)
 
     def subt(self, rhs: "Vec") -> "Vec":
         result = Vec(len(rhs.vals))
@@ -168,11 +176,8 @@ class Matrix:
             self.values.append(row[0:len(row)]) # deep copy
 
         if defaultInit:
-            if c < r:
+            if c == r: # is a square
                 for i in range(0,c):
-                    self.values[i][i] = 1.0
-            else:
-                for i in range(0,r):
                     self.values[i][i] = 1.0
 
 
@@ -310,10 +315,10 @@ class Matrix:
         # ensure non zeros in pivot entries
         found = False
         for pivot in range(0,min([workingMat.rows, workingMat.cols])):
-            if workingMat.values[pivot][pivot] == 0.0:
+            if withinError(workingMat.values[pivot][pivot],0.0,DEFAULT_ERROR_MARGIN) == 0.0:
                 #try to find non-zero in rows below the pivot
                 for i in range(pivot + 1, workingMat.rows):
-                    if workingMat.values[i][pivot] != 0.0:
+                    if withinError(workingMat.values[i][pivot],0.0,DEFAULT_ERROR_MARGIN) != 0.0:
                         workingMat.scaleAddRows(1.0, i, pivot)
                         found = True
                         break
@@ -321,7 +326,7 @@ class Matrix:
                     #try to find non-zero above pivots
                     j = pivot -1
                     while j >= 0:
-                        if workingMat.values[j][pivot] != 0.0:
+                        if withinError(workingMat.values[j][pivot],0.0,DEFAULT_ERROR_MARGIN) != 0.0:
                             workingMat.scaleAddRows(1.0, j, pivot)
                             found = True
                             break
@@ -333,7 +338,7 @@ class Matrix:
 
         for pivot in range(0,min([workingMat.rows, workingMat.cols])):
             pivotVal = workingMat.values[pivot][pivot]
-            if pivotVal == 0.0:
+            if withinError(pivotVal,0.0,DEFAULT_ERROR_MARGIN) == 0.0:
                 continue
             workingMat.scaleRow(pivot, 1.0/pivotVal)
             for spot in range(pivot+1,min([workingMat.rows, workingMat.cols])):
@@ -365,7 +370,7 @@ class Matrix:
         workingMat = self.rowReduce()
         count = 0
         for i in range(0,min([workingMat.rows, workingMat.cols])):
-            if workingMat.values[i][i] == 1.0:
+            if withinError(workingMat.values[i][i],1.0,DEFAULT_ERROR_MARGIN) == 1.0:
                 count += 1
             else:
                 break
@@ -448,7 +453,7 @@ class Matrix:
             for j in range(0,self.cols):
                 intg = int(self.values[i][j])
                 delta = self.values[i][j] - float(intg)
-                if delta < 0.00000000001 and delta > -0.00000000001:
+                if delta < DEFAULT_ERROR_MARGIN and delta > -DEFAULT_ERROR_MARGIN:
                     dest.values[i][j] = float(intg)
                 else:
                     dest.values[i][j] = self.values[i][j]
@@ -586,7 +591,7 @@ def sumsToOne(coeffs: list[float]) -> bool:
     for ce in coeffs:
         total += ce
 
-    return total == 1.0
+    return withinError(total,1.0,DEFAULT_ERROR_MARGIN) == 1.0
 
 # for Matrix(n,n+1)
 def checkAffine(aug: Matrix) -> bool:
@@ -711,6 +716,7 @@ if __name__=="__main__":
     aff=AffineComb(*V)
     print(aff.vals)
 
+    print("check affine")
     g=Matrix(3,4)
     g.values=[[1,1,4,1],[2,6,4,1],[1,1,1,1]]
     print(checkAffine(g))
@@ -760,3 +766,8 @@ if __name__=="__main__":
 
     o = Matrix(2,2,True)
     o.print()
+
+    # it only produces identity when it is square
+    ni = Matrix(2,3)
+    ni.print() # non-square
+
