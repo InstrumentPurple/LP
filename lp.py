@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Version 0.03alpha
+# Version 0.04alpha
 # June 23, 2026
 # must run: python -m pip install sympy
 # No AI used here
@@ -81,7 +81,7 @@ class Vec:
 
         l = self.length()
 
-        if l == 0.0:
+        if withinError(l,0.0, DEFAULT_ERROR_MARGIN) == 0.0:
             z=Vec(self.dimen) # zero vector
             return z
 
@@ -157,7 +157,14 @@ class Vec:
         return scaled
 
     def eq(self, rhs: "Vec") -> bool:
-        return self.vals == rhs.vals
+        evalu = True
+
+        for (l,r) in zip(self.vals,rhs.vals):
+            if withinError(l,r,DEFAULT_ERROR_MARGIN) != r:
+                evalu = False
+                break
+
+        return evalu
 
     def resetDimension(self):
         self.dimen = len(self.vals)
@@ -385,10 +392,13 @@ class Matrix:
     def eq(self, rhs: "Matrix") -> bool:
         if self.cols !=  rhs.cols or self.rows != rhs.rows:
             return False
-        allGood = True
         for rowl,rowr in zip(self.values, rhs.values):
-            allGood = allGood and (rowl==rowr)
-        return allGood
+            if len(rowl) != len(rowr):
+                return False
+            for (l,r) in zip(rowl,rowr):
+                if withinError(l,r,DEFAULT_ERROR_MARGIN) != r:
+                    return False
+        return True
 
     def isSymetric(self):
         t = self.transpose()
