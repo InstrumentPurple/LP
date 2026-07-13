@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Version 0.01alpha
+# Version 0.02alpha
 # June 23, 2026
 # must run: python -m pip install sympy
 # No AI used here
@@ -88,7 +88,7 @@ class Vec:
 
     def isUnitVec(self):
         diff = 1.0 - self.length()
-        return (diff > 0.0) and (diff < 0.000000001)
+        return (diff >= 0.0) and (diff < 0.000000001)
 
     def subt(self, rhs: "Vec") -> "Vec":
         result = Vec(len(rhs.vals))
@@ -151,7 +151,7 @@ class Vec:
     def eq(self, rhs: "Vec") -> bool:
         return self.vals == rhs.vals
 
-    def resetDimention(self):
+    def resetDimension(self):
         self.dimen = len(self.vals)
 
 class Matrix:
@@ -606,7 +606,7 @@ def convertRowVecs(*vecs) -> Matrix:
     return dest
 
 if __name__=="__main__":
-    print("Beggining tests / examples... ")
+    print("Begining tests / examples... ")
 
     I = Matrix(2,2)
     I.values=[[1,1],[0,2]]
@@ -644,7 +644,7 @@ if __name__=="__main__":
 
 
     #A=Matrix(0,0)
-    #load automatically adjusts the dimentions to the matrix in the text file
+    #load automatically adjusts the dimensions to the matrix in the text file
     #A.load('./testmat2.txt')
     #A.print()
     #print()
@@ -754,7 +754,7 @@ if __name__=="__main__":
     rv.print()
 
     # defaultInit controls how the matrix is initialized if you want all 0s
-    # You must have False as your third argument. it's diagonal will be 1's otherwise
+    # You must have False as your third argument. it's diagonal will be 1s otherwise
     z = Matrix(2,2,False)
     z.print()
 
