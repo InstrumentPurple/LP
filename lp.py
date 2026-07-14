@@ -312,7 +312,7 @@ class Matrix:
         with open(path, "w") as f:
             for i in range(0,self.rows):
                 for j in range(0, self.cols):
-                    if j + 1 == len(self.values[j]):
+                    if j + 1 == len(self.values[i]):
                         f.write(str(self.values[i][j]))
                     else:
                         f.write(str(self.values[i][j]) + " ")
@@ -809,7 +809,7 @@ if __name__=="__main__":
     # it only produces identity when it is square
     ni = Matrix(2,3)
     ni.print() # non-square
-
+    ni.values=[[1,2,3],[6,7,8]]
     print("Is identity symetric?")
     symet = Matrix(20,20,True)
     print(symet.isSymetric())
@@ -819,10 +819,10 @@ if __name__=="__main__":
 
     print()
 
-    got = convertMatrixToColVecs(o)
+    got = convertMatrixToColVecs(ni)
     got[0].print()
     got[1].print()
-    #o.save("./test.txt")
-    #B = Matrix(0,0)
-    #B.load("./test.txt")
-    #B.scale(20).print()
+    ni.save("./test.txt")
+    B = Matrix(0,0)
+    B.load("./test.txt")
+    B.scale(20).print()
