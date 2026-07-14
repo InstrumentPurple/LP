@@ -420,7 +420,7 @@ class Matrix:
                     return False
         return True
 
-    def isSymetric(self):
+    def isSymmetric(self):
         t = self.transpose()
         return self.eq(t)
 
@@ -810,9 +810,14 @@ if __name__=="__main__":
     ni = Matrix(2,3)
     ni.print() # non-square
     ni.values=[[1,2,3],[6,7,8]]
+
+    print()
+
     print("Is identity symetric?")
     symet = Matrix(20,20,True)
-    print(symet.isSymetric())
+    print(symet.isSymmetric())
+
+    print()
 
     print("trace of identity of size 20")
     print(symet.trace())
@@ -822,7 +827,8 @@ if __name__=="__main__":
     got = convertMatrixToColVecs(ni)
     got[0].print()
     got[1].print()
-    ni.save("./test.txt")
-    B = Matrix(0,0)
-    B.load("./test.txt")
-    B.scale(20).print()
+
+    #ni.save("./lp_test.txt")
+    #B = Matrix(0,0)
+    #B.load("./lp_test.txt")
+    #B.scale(20).print()
