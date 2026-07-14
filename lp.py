@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Version 0.04alpha
+# Version 0.05alpha
 # June 23, 2026
 # must run: python -m pip install sympy
 # No AI used here
@@ -198,9 +198,19 @@ class Matrix:
     def print(self):
         if self.undef:
             print("undefined")
+
+        maximum = 0
         for r in range(0,self.rows):
             for c in range(0,self.cols):
-                print(self.values[r][c], end=" ")
+                if len(str(self.values[r][c])) > maximum:
+                    maximum = len(str(self.values[r][c]))
+
+        for r in range(0,self.rows):
+            for c in range(0,self.cols):
+                leng = len(str(self.values[r][c]))
+                delta = maximum - leng
+                print(" " * delta, end="")
+                print(str(self.values[r][c]) + " ", end="")
             print()
 
     def mul(self, rhs: "Matrix") -> "Matrix":
@@ -297,6 +307,16 @@ class Matrix:
         self.values = finished
         self.rows = len(finished)
         self.cols = len(finished[0])
+
+    def save(self, path: str):
+        with open(path, "w") as f:
+            for i in range(0,self.rows):
+                for j in range(0, self.cols):
+                    if j + 1 == len(self.values[j]):
+                        f.write(str(self.values[i][j]))
+                    else:
+                        f.write(str(self.values[i][j]) + " ")
+                f.write("\n")
 
     def scaleRow(self, rowNum:int, by:float):
         if not(rowNum < len(self.values)):
@@ -620,6 +640,15 @@ def convertRowVecs(*vecs) -> Matrix:
         dest.setPlaceVecRow(i, vecs[i])
     return dest
 
+def convertMatrixToColVecs(source: Matrix) -> list[Vec]:
+    dest = []
+
+    for i in range(0, source.cols):
+        dest.append(source.toColVecAt(i))
+
+    return dest
+
+
 if __name__=="__main__":
     print("Begining tests / examples... ")
 
@@ -781,3 +810,19 @@ if __name__=="__main__":
     ni = Matrix(2,3)
     ni.print() # non-square
 
+    print("Is identity symetric?")
+    symet = Matrix(20,20,True)
+    print(symet.isSymetric())
+
+    print("trace of identity of size 20")
+    print(symet.trace())
+
+    print()
+
+    got = convertMatrixToColVecs(o)
+    got[0].print()
+    got[1].print()
+    #o.save("./test.txt")
+    #B = Matrix(0,0)
+    #B.load("./test.txt")
+    #B.scale(20).print()
