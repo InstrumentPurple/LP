@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Version 0.07alpha
+# Version 0.08alpha
 # June 23, 2026
 # must run: python -m pip install sympy
 # No AI used here
@@ -538,6 +538,31 @@ def pointBetween(a: Vec, b: Vec, lamb: float) -> Vec:
     return dest
 
 
+class LTransformation:
+    def __init__(self, exprList): # i'm not even going to try the typehint. A list of sympy expressions
+                                  # that use xN's Symbols where N is in 0..L where L is the len(self.fn)
+        self.fn=exprList
+    def evaluate(self,v: Vec):
+        dest = Vec(len(self.fn))
+        if v.dimen == len(self.fn):
+            for i,expr in zip(range(0,len(self.fn)),self.fn):
+                dest.vals[i] = expr.subs(v.sympyValueOfX())
+        return dest
+
+    def findMatrix(self):
+        lenoffn =len(self.fn)
+        aubreyPlaza = Matrix(lenoffn,lenoffn)
+
+        zero = Vec(lenoffn)
+        cur = 1
+        for i in range(0,lenoffn):
+            unit = copy.deepcopy(zero)
+            unit.vals[i] = 1
+            aubreyPlaza.setPlaceVecCol(i,self.evaluate(unit))
+
+        return aubreyPlaza
+
+
 #I don't know how usefull it is but it's something
 class LinearProgram:
     def __init__(self, objective: sympy.Mul, restrictions: list[sympy.LessThan]):
@@ -892,3 +917,17 @@ if __name__=="__main__":
     L3 = Matrix(2,2)
     L3.print()
     print(L3.det())
+
+    # Lay 4th ed, 1.9 problem 17
+    print()
+    x0= sympy.Symbol("x0")
+    x1 = sympy.Symbol("x1")
+    x2 = sympy.Symbol("x2")
+    x3 = sympy.Symbol("x3")
+
+    T = LTransformation([x0 + 2.0*x1,
+                         0 * x1, # a trick to get to always be zero while allowing calls to .subs
+                         2.0*x1 + x3,
+                         x1 - x3])
+    beau = T.findMatrix()
+    beau.closeInts().print()
