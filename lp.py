@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Version 0.05alpha
+# Version 0.06alpha
 # June 23, 2026
 # must run: python -m pip install sympy
 # No AI used here
@@ -36,10 +36,10 @@ import copy
 
 
 
-def withinError(subj: float, prist:float, delta:float) -> float:
-    dist = abs(subj - prist)
+def withinError(subj: float, perfect:float, delta:float) -> float:
+    dist = abs(subj - perfect)
     if dist >= 0.0 and dist <= delta:
-        return prist
+        return perfect
     return subj
 
 class Vec:
@@ -95,8 +95,7 @@ class Vec:
         return withinError(self.dotp(rhs),0.0,DEFAULT_ERROR_MARGIN) == 0.0
 
     def isUnitVec(self):
-        diff = 1.0 - self.length()
-        return (diff >= 0.0) and (diff < DEFAULT_ERROR_MARGIN)
+        return withinError(self.length(),1.0, DEFAULT_ERROR_MARGIN) == 1.0
 
     def subt(self, rhs: "Vec") -> "Vec":
         result = Vec(len(rhs.vals))
@@ -628,13 +627,13 @@ def checkAffine(aug: Matrix) -> bool:
     coeffs = aug.findx()
     return sumsToOne(coeffs.vals)
 
-def convertColVecs(*vecs) -> Matrix:
+def convertColVecsToMatrix(*vecs) -> Matrix:
     dest=Matrix(len(vecs[0].vals),len(vecs))
     for i in range(0,dest.cols):
         dest.setPlaceVecCol(i, vecs[i])
     return dest
 
-def convertRowVecs(*vecs) -> Matrix:
+def convertRowVecsToMatrix(*vecs) -> Matrix:
     dest=Matrix(len(vecs),len(vecs[0].vals))
     for i in range(0,dest.rows):
         dest.setPlaceVecRow(i, vecs[i])
@@ -656,13 +655,14 @@ if __name__=="__main__":
     I.values=[[1,1],[0,2]]
     P = Matrix(2,1)
     P.values=[[3],[8]]
-
+    print("I*P")
     I.mul(P).print()
 
     print()
     g=Matrix(2,2)
     g.values = [[1.5,1.3],[1.6, 0.4]]
-
+    print()
+    print("g")
     g.print()
     print()
     g.transpose().print()
@@ -671,15 +671,17 @@ if __name__=="__main__":
     print("rank of g: ", end="")
     print(g.rank())
 
-
-
+    print()
+    print("m*g")
     m=Vec(2)
     m.vals=[5.0,0.0]
 
     m_ = m.toColMatrix()
     Ax=g.mul(m_) # m_ is rhs because it is x in Ax
+    Ax.print()
 
-
+    print()
+    print("n")
     n=Vec(2)
     n.vals=[1.3,1.0]
     n.print()
@@ -727,7 +729,7 @@ if __name__=="__main__":
 
     b=Vec(2)
     b.vals=[3.0,8.0]
-
+    print()
     print(lp.feasible(a.sympyValueOfX()))
     print(lp.feasible(b.sympyValueOfX()))
     print("maximum tested solution")
@@ -771,7 +773,8 @@ if __name__=="__main__":
     A=Matrix(2,2)
     A.values=[[1,2],[7,9]]
     invr = A.inverse()
-    A.mul(invr).closeInts().print() # should see identity
+    print("should see identity")
+    A.mul(invr).closeInts().print()
 
     print()
     U=Matrix(2,2)
@@ -779,8 +782,8 @@ if __name__=="__main__":
     U.closeInts().print()
 
     print()
-
-    U.niceRowReduce().print() # should see identity again since U is invertible
+    print("should see identity again since U is invertible")
+    U.niceRowReduce().print() #
 
     print()
 
@@ -789,13 +792,14 @@ if __name__=="__main__":
     L.print()
 
     print()
-
-    cv = convertColVecs(*V)
+    print("the list of Vecs V as column vectors")
+    cv = convertColVecsToMatrix(*V)
     cv.print()
 
     print()
 
-    rv = convertRowVecs(*V)
+    print("the list of Vecs V as row vectors")
+    rv = convertRowVecsToMatrix(*V)
     rv.print()
 
     # defaultInit controls how the matrix is initialized if you want all 0s
@@ -811,20 +815,7 @@ if __name__=="__main__":
     ni.print() # non-square
     ni.values=[[1,2,3],[6,7,8]]
 
-    print()
-
-    print("Is identity symetric?")
-    symet = Matrix(20,20,True)
-    print(symet.isSymmetric())
-
-    print()
-
-    print("trace of identity of size 20")
-    print(symet.trace())
-
-    print()
-
-    got = convertMatrixToColVecs(ni)
+    got = convertMatrixToColVecs(convertColVecsToMatrix(*V))
     got[0].print()
     got[1].print()
 
@@ -832,3 +823,23 @@ if __name__=="__main__":
     #B = Matrix(0,0)
     #B.load("./lp_test.txt")
     #B.scale(20).print()
+    symmet = Matrix(20,20,True)
+    print("trace of identity of size 20")
+    print(symmet.trace())
+
+    print("composition tests: All should be true")
+    print(symmet.isSymmetric())
+
+    print(V[2].cross(V[1]).isPerpen(V[2]))
+    print(V[1].cross(V[2]).isPerpen(V[1]))
+    print(V[0].cross(V[3]).isPerpen(V[0]))
+
+    print(V[0].norm().isUnitVec())
+    print(V[1].norm().isUnitVec())
+    print(V[2].norm().isUnitVec())
+
+    result=V[0].add(V[1]).subt(V[1])
+    print(result.eq(V[0]))
+
+    result=V[1].add(V[2]).subt(V[2]).scale(2.0)
+    print(result.eq(V[1].scale(2.0)))
