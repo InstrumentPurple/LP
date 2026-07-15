@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Version 0.06alpha
+# Version 0.07alpha
 # June 23, 2026
 # must run: python -m pip install sympy
 # No AI used here
@@ -495,6 +495,38 @@ class Matrix:
             total += self.values[val][val]
         return total
 
+    def detPrep(self, col: int) -> "Matrix":
+        prepared = Matrix(self.rows-1,self.cols-1)
+
+        for i in range(0, self.rows-1):
+            for j in range(0, self.cols-1):
+                if j >= col:
+                    prepared.values[i][j] = self.values[i+1][j+1]
+                else:
+                    prepared.values[i][j] = self.values[i+1][j]
+
+        return prepared
+
+    def detSign(self, i: int):
+        if i % 2 == 0:
+            return 1.0
+        else:
+            return -1.0
+
+    def det(self) -> float:
+        if self.rows != self.cols:
+            return 0.0
+        if self.rows == 2 and self.cols == 2:
+            return self.values[0][0] * self.values[1][1] - self.values[0][1] * self.values[1][0]
+
+        result = 0.0
+        cur = Matrix(0,0)
+        for i in range(0,self.cols):
+            cur = self.detPrep(i)
+            result += self.detSign(i) * self.values[0][i] * cur.det()
+
+        return result
+
 def pointBetween(a: Vec, b: Vec, lamb: float) -> Vec:
     dest=Vec(a.dimen)
     if lamb >= 0.0 and lamb <= 1.0:
@@ -690,7 +722,7 @@ if __name__=="__main__":
 
 
     #A=Matrix(0,0)
-    #load automatically adjusts the dimensions to the matrix in the text file
+    #load automatically adjusts the dimensions to that of the matrix in the text file
     #A.load('./testmat2.txt')
     #A.print()
     #print()
@@ -823,6 +855,7 @@ if __name__=="__main__":
     #B = Matrix(0,0)
     #B.load("./lp_test.txt")
     #B.scale(20).print()
+
     symmet = Matrix(20,20,True)
     print("trace of identity of size 20")
     print(symmet.trace())
@@ -841,5 +874,21 @@ if __name__=="__main__":
     result=V[0].add(V[1]).subt(V[1])
     print(result.eq(V[0]))
 
-    result=V[1].add(V[2]).subt(V[2]).scale(2.0)
+    result=(V[1].add(V[2]).subt(V[2])).scale(2.0)
     print(result.eq(V[1].scale(2.0)))
+
+    print()
+    print("determinates")
+    L = Matrix(3,3)
+    L.values=[[1,5,0],[2,4,-1],[0, -2, 0]]
+    L.print()
+    print(L.det())
+
+    L2 = Matrix(4,4)
+    L2.values=[[5,-7,2,2],[0,3,0,-4],[-5,-8,0,3],[0,5,0,-6]]
+    L2.print()
+    print(L2.det())
+
+    L3 = Matrix(2,2)
+    L3.print()
+    print(L3.det())
