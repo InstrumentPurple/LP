@@ -491,7 +491,7 @@ class Matrix:
 
     def smartChop(self, r: int, c: int) -> str:
         workingNum = str(self.values[r][c])
-        return re.sub(r'0[10,200]\d+?$','0',workingNum)
+        return re.sub(r'0{10,200}\d+?$','0',workingNum)
 
     def trace(self) -> float:
         total = 0.0
