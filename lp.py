@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Version 0.09alpha
+# Version 0.10alpha
 # June 23, 2026
 # must run: python -m pip install sympy
 # No AI used here
@@ -31,6 +31,7 @@ DEFAULT_ERROR_MARGIN=0.00000000001
 
 from math import sqrt
 import sympy
+from sympy import S
 import re
 import copy
 
@@ -493,6 +494,14 @@ class Matrix:
         workingNum = str(self.values[r][c])
         return re.sub(r'0{10,200}\d+?$','0',workingNum)
 
+    def swiftKarate(self) -> "Matrix":
+        dest = Matrix(self.rows, self.cols)
+        for r in range(0, self.rows):
+            for c in range(0, self.cols):
+                chopped = self.smartChop(r,c)
+                dest.values[r][c] = float(chopped)
+        return dest
+    
     def trace(self) -> float:
         total = 0.0
         for val in range(0,min(self.rows, self.cols)):
@@ -566,9 +575,10 @@ class LTransformation:
         return aubreyPlaza
 
 class Tableau:
-    def __init__(self,topleft,rightHandSide):
+    def __init__(self,topleft: Matrix,rightHandSide: Matrix,Obj: Matrix):
         self.topLeft = topleft
         self.rightHandSide=rightHandSide
+        self.obj = Obj
 
 #I don't know how usefull it is but it's something
 class LinearProgram:
@@ -576,7 +586,7 @@ class LinearProgram:
         self.obj = objective
         self.rest = restrictions
         self.addedSlack = False
-
+        self.slacks = []
 
     def feasible(self, xVals: dict[str,float]) -> bool:
         #enforce non-negativity
@@ -614,11 +624,12 @@ class LinearProgram:
         count = 0
 
         equalities: list[sympy.Eq] = []
-
+        slacks = []
         for ineq in self.rest:
             equalities.append(sympy.Eq(ineq.lhs + sympy.Symbol(pre + str(count)), ineq.rhs))
+            slacks.append(sympy.Symbol(pre + str(count)))
             count += 1
-
+        self.slacks = slacks
         self.rest = equalities
         self.addedSlack = True
 
@@ -626,19 +637,12 @@ class LinearProgram:
         if not self.addedSlack:
             self.addSlackVars()
         # turn into a tablue represented by a Matrix object
-        mat=Matrix(len(self.rest)+1,len(self.rest[0].lhs.as_coefficients_dict()))
+        mat=Matrix(len(self.rest),len(self.rest[0].lhs.as_coefficients_dict()))
 
         for j,restriction in zip(range(0, len(self.rest)),self.rest):
             restCoef = restriction.lhs.as_coefficients_dict()
             for i,c in zip(range(0, len(restCoef)),restCoef):
                 mat.values[j][i] = restCoef[c]
-
-
-        objd = self.obj.as_coefficients_dict()
-        cur = 0
-        for never, coeff in objd.items():
-            mat.values[len(mat.values)-1][cur] = coeff
-            cur += 1
 
         return mat
 
@@ -648,8 +652,17 @@ class LinearProgram:
             m.values[i][0] = indRest.rhs
         return m
 
+    def generateObj(self) -> Matrix:
+        mat=Matrix(1,len(self.obj.as_coefficients_dict()))
+        objd = self.obj.as_coefficients_dict()
+        cur = 0
+        for n in objd:
+            mat.values[0][cur] = objd[n]
+            cur += 1
+
+
     def generateTableau(self) -> Tableau:
-        return Tableau(self.generateTopLeftOfTableau(), self.generateRightOfTableau())
+        return Tableau(self.generateTopLeftOfTableau(), self.generateRightOfTableau(), self.generateObj())
 
 
 # sets all free variables to zero when len(points) > rows
@@ -858,10 +871,14 @@ if __name__=="__main__":
     A.mul(invr).closeInts().print()
 
     print()
+    print("shave methods test")
     U=Matrix(2,2)
     U.values=[[1.2,41.000000000001],[-500.0000000000034,5]]
     U.closeInts().print()
+    print()
+    print(U.swiftKarate().values)
 
+    print()
     print()
     print("should see identity again since U is invertible")
     U.niceRowReduce().print() #
@@ -955,6 +972,3 @@ if __name__=="__main__":
 
     beau = T.findMatrix()
     beau.closeInts().print()
-
-
-
