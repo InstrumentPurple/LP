@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Version 0.10alpha
+# Version 0.10.1alpha
 # June 23, 2026
 # must run: python -m pip install sympy
 # No AI used here
@@ -501,7 +501,7 @@ class Matrix:
                 chopped = self.smartChop(r,c)
                 dest.values[r][c] = float(chopped)
         return dest
-    
+
     def trace(self) -> float:
         total = 0.0
         for val in range(0,min(self.rows, self.cols)):
@@ -659,7 +659,7 @@ class LinearProgram:
         for n in objd:
             mat.values[0][cur] = objd[n]
             cur += 1
-
+        return mat
 
     def generateTableau(self) -> Tableau:
         return Tableau(self.generateTopLeftOfTableau(), self.generateRightOfTableau(), self.generateObj())
@@ -961,6 +961,7 @@ if __name__=="__main__":
 
     # Lay 4th ed, 1.9 problem 17
     print()
+    # must be using symbols of xN
     x0 = sympy.Symbol("x0")
     x1 = sympy.Symbol("x1")
     x3 = sympy.Symbol("x3")
