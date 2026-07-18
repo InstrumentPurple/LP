@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Version 0.08alpha
+# Version 0.09alpha
 # June 23, 2026
 # must run: python -m pip install sympy
 # No AI used here
@@ -201,15 +201,15 @@ class Matrix:
         maximum = 0
         for r in range(0,self.rows):
             for c in range(0,self.cols):
-                if len(str(self.values[r][c])) > maximum:
-                    maximum = len(str(self.values[r][c]))
+                if len(str(self.smartChop(r,c))) > maximum:
+                    maximum = len(str(self.smartChop(r,c)))
 
         for r in range(0,self.rows):
             for c in range(0,self.cols):
-                leng = len(str(self.values[r][c]))
+                leng = len(str(self.smartChop(r,c)))
                 delta = maximum - leng
                 print(" " * delta, end="")
-                print(str(self.values[r][c]) + " ", end="")
+                print(str(self.smartChop(r,c)) + " ", end="")
             print()
 
     def mul(self, rhs: "Matrix") -> "Matrix":
@@ -481,13 +481,17 @@ class Matrix:
         for i in range(0,self.rows):
             for j in range(0,self.cols):
                 intg = int(self.values[i][j])
-                delta = self.values[i][j] - float(intg)
-                if delta < DEFAULT_ERROR_MARGIN and delta > -DEFAULT_ERROR_MARGIN:
+                delta = abs(self.values[i][j] - float(intg))
+                if delta < DEFAULT_ERROR_MARGIN:
                     dest.values[i][j] = float(intg)
                 else:
                     dest.values[i][j] = self.values[i][j]
 
         return dest
+
+    def smartChop(self, r: int, c: int) -> str:
+        workingNum = str(self.values[r][c])
+        return re.sub(r'0[10,200]\d+?$','0',workingNum)
 
     def trace(self) -> float:
         total = 0.0
@@ -542,7 +546,7 @@ class LTransformation:
     def __init__(self, exprList): # i'm not even going to try the typehint. A list of sympy expressions
                                   # that use xN's Symbols where N is in 0..L where L is the len(self.fn)
         self.fn=exprList
-    def evaluate(self,v: Vec):
+    def evaluate(self,v: Vec) -> Vec:
         dest = Vec(len(self.fn))
         if v.dimen == len(self.fn):
             for i,expr in zip(range(0,len(self.fn)),self.fn):
@@ -554,7 +558,6 @@ class LTransformation:
         aubreyPlaza = Matrix(lenoffn,lenoffn)
 
         zero = Vec(lenoffn)
-        cur = 1
         for i in range(0,lenoffn):
             unit = copy.deepcopy(zero)
             unit.vals[i] = 1
@@ -562,6 +565,10 @@ class LTransformation:
 
         return aubreyPlaza
 
+class Tableau:
+    def __init__(self,topleft,rightHandSide):
+        self.topLeft = topleft
+        self.rightHandSide=rightHandSide
 
 #I don't know how usefull it is but it's something
 class LinearProgram:
@@ -584,6 +591,8 @@ class LinearProgram:
         stillGood = True
         for rst in self.rest:
             stillGood = stillGood and rst.subs(xVals)
+            if not stillGood:
+                break
 
         return stillGood
 
@@ -613,22 +622,34 @@ class LinearProgram:
         self.rest = equalities
         self.addedSlack = True
 
-    # NOT COMPLETED
-    def simplexMin(self) -> Vec:
-        pass
-        #if not self.addedSlack:
-        #    self.addSlackVars()
+    def generateTopLeftOfTableau(self) -> Matrix:
+        if not self.addedSlack:
+            self.addSlackVars()
         # turn into a tablue represented by a Matrix object
-        #mat=Matrix(len(self.rest)+1,len(self.obj))
+        mat=Matrix(len(self.rest)+1,len(self.rest[0].lhs.as_coefficients_dict()))
 
-        #d = self.obj.as_coefficients_dict()
-        #cur = 0
-        #for term, coeff in d.items():
-        #    mat[len(mat.values)-1][cur] = coeff
-        #    cur += 1
-
+        for j,restriction in zip(range(0, len(self.rest)),self.rest):
+            restCoef = restriction.lhs.as_coefficients_dict()
+            for i,c in zip(range(0, len(restCoef)),restCoef):
+                mat.values[j][i] = restCoef[c]
 
 
+        objd = self.obj.as_coefficients_dict()
+        cur = 0
+        for never, coeff in objd.items():
+            mat.values[len(mat.values)-1][cur] = coeff
+            cur += 1
+
+        return mat
+
+    def generateRightOfTableau(self) -> Matrix:
+        m=Matrix(len(self.rest),1)
+        for i,indRest in zip(range(0,len(self.rest)),self.rest):
+            m.values[i][0] = indRest.rhs
+        return m
+
+    def generateTableau(self) -> Tableau:
+        return Tableau(self.generateTopLeftOfTableau(), self.generateRightOfTableau())
 
 
 # sets all free variables to zero when len(points) > rows
@@ -792,6 +813,9 @@ if __name__=="__main__":
     print("maximum tested solution")
     print(lp.maxSolution([a.sympyValueOfX(),b.sympyValueOfX()]))
     lp.addSlackVars()
+    tab = lp.generateTableau()
+    tab.topLeft.print()
+    tab.rightHandSide.print()
 
     u=Vec(2)
     u.vals=[1,2]
@@ -920,14 +944,17 @@ if __name__=="__main__":
 
     # Lay 4th ed, 1.9 problem 17
     print()
-    x0= sympy.Symbol("x0")
+    x0 = sympy.Symbol("x0")
     x1 = sympy.Symbol("x1")
-    x2 = sympy.Symbol("x2")
     x3 = sympy.Symbol("x3")
 
     T = LTransformation([x0 + 2.0*x1,
                          0 * x1, # a trick to get to always be zero while allowing calls to .subs
                          2.0*x1 + x3,
                          x1 - x3])
+
     beau = T.findMatrix()
     beau.closeInts().print()
+
+
+
